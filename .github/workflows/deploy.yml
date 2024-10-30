@@ -10,36 +10,37 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and push Docker image
-      run: |
-        docker build -t monika975/python-app:latest .
-        docker push monika975/python-app:latest
+      - name: Build and push Docker image
+        run: |
+          docker build -t monika975/python-app:latest .
+          docker push monika975/python-app:latest
 
-    - name: SSH into EC2 and deploy
-      uses: appleboy/ssh-action@v0.1.3
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USERNAME }}
-        key: ${{ secrets.EC2_PRIVATE_KEY }}
-        script: |
-          # Stop the currently running container (replace 'python-app' with your container name)
-          docker stop python-app || true
-          docker rm python-app || true
+      - name: SSH into EC2 and deploy
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.EC2_HOST }}               # EC2 public DNS or IP
+          username: ${{ secrets.EC2_USERNAME }}       # EC2 username (e.g., 'ubuntu')
+          key: ${{ secrets.EC2_PRIVATE_KEY }}         # Private SSH key
+          port: 22                                    # Default SSH port
+          script: |
+            # Stop the currently running container (replace 'python-app' with your container name)
+            docker stop python-app || true
+            docker rm python-app || true
 
-          # Pull the latest image from Docker Hub
-          docker pull monika975/python-app:latest
+            # Pull the latest image from Docker Hub
+            docker pull monika975/python-app:latest
 
-          # Run the new container with the correct name and ports (replace 'python-app' with your container name)
-          docker run -d --name python-app -p 5000:5000 monika975/python-app:latest
+            # Run the new container with the correct name and ports (replace 'python-app' with your container name)
+            docker run -d --name python-app -p 5000:5000 monika975/python-app:latest
